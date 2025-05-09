@@ -60,30 +60,92 @@ document.addEventListener('DOMContentLoaded', () => {
         updateImage(currentIndex - 1);
     }
 
-    // === GESTION DES TOUCHES POUR SWIPE ===
-    document.querySelector('.slider').addEventListener('touchstart', (e) => {
-        touchstartX = e.touches[0].clientX;
-        touchstartY = e.touches[0].clientY;
-    });
+ // Ajoutez cette variable booléenne au début de votre script, avec les autres variables d'état/swipe
+ let isMultiTouch = false;
 
-    document.querySelector('.slider').addEventListener('touchend', (e) => {
-        touchendX = e.changedTouches[0].clientX;
-        touchendY = e.changedTouches[0].clientY;
-        handleSwipe();
-    });
 
-    function handleSwipe() {
-        const diffX = touchendX - touchstartX;
-        const diffY = touchendY - touchstartY;
+ // === GESTION DES TOUCHES POUR SWIPE ===
+ document.querySelector('.slider').addEventListener('touchstart', (e) => {
+     // --- MODIFICATION ICI : Détecter si c'est un toucher multi-doigts ---
+     if (e.touches.length > 1) {
+         isMultiTouch = true; // Marque comme multi-touch (potentiel zoom/pinch)
+         // console.log('Multi-touch detected, ignoring for swipe.');
+         // Optionnel : e.preventDefault() ici peut parfois aider à bloquer le zoom natif,
+         // mais faites attention car ça peut aussi bloquer d'autres comportements par défaut.
+         // Pour l'instant, on va juste ignorer le swipe.
+         // On ne stocke pas les positions de départ si c'est multi-touch, même si ça ne sert qu'à la clarté.
+         touchstartX = 0;
+         touchstartY = 0;
+         return; // On sort de la fonction touchstart, on ne traite pas ce toucher comme un début de swipe simple
+     } else {
+         isMultiTouch = false; // C'est un toucher à un seul doigt (potentiel swipe simple)
+         touchstartX = e.touches[0].clientX;
+         touchstartY = e.touches[0].clientY;
+         // console.log('Single touch start:', touchstartX, touchstartY);
+     }
+     // ---------------------------------------------------------------
+ });
 
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > swipeThreshold) {
-            if (diffX < 0) {
-                showNextImage();
-            } else {
-                showPrevImage();
-            }
-        }
-    }
+ // --- AJOUT/MODIFICATION : Gérer l'événement touchcancel ---
+ // C'est important pour nettoyer si le toucher se termine anormalement
+ document.querySelector('.slider').addEventListener('touchcancel', (e) => {
+      // --- MODIFICATION : Réinitialiser le drapeau multi-touch et les positions ---
+      isMultiTouch = false;
+      touchstartX = 0;
+      touchendX = 0;
+      touchstartY = 0;
+      touchendY = 0;
+      // console.log('Touch cancel');
+  });
+
+
+ // --- MODIFICATION ICI : L'écouteur touchend ---
+ document.querySelector('.slider').addEventListener('touchend', (e) => {
+     // On enregistre toujours la position finale
+     touchendX = e.changedTouches[0].clientX;
+     touchendY = e.changedTouches[0].clientY;
+     // console.log('Touch end:', touchendX, touchendY);
+
+     // On appelle handleSwipe QUI va vérifier si c'était multi-touch
+     handleSwipe();
+
+     // --- MODIFICATION : Réinitialiser le drapeau multi-touch à la fin de TOUTE interaction tactile ---
+     // C'est une sécurité au cas où touchcancel ne se déclenche pas ou si handleSwipe ne le fait pas (même si handleSwipe ne devrait pas modifier le drapeau)
+     isMultiTouch = false; // Réinitialise le drapeau multi-touch
+     // --------------------------------------------------------------------
+     // Les positions de toucher sont aussi réinitialisées ici ou dans touchcancel/handleSwipe si vous l'avez mis là
+ });
+
+
+ // --- MODIFICATION ICI : La fonction handleSwipe ---
+ function handleSwipe() {
+     // --- AJOUT IMPORTANT : Ignorer le swipe si le toucher initial était multi-doigts ---
+     if (isMultiTouch) {
+         // console.log('Ignoring swipe due to multi-touch flag.');
+         return; // Sort immédiatement de la fonction si le drapeau multi-touch est vrai
+     }
+     // -------------------------------------------------------------------
+
+     const diffX = touchendX - touchstartX;
+     const diffY = touchendY - touchstartY;
+
+     // Le reste de la logique de détection de swipe ne change pas
+     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > swipeThreshold) {
+         // console.log('Swipe detected!');
+         if (diffX < 0) {
+             showNextImage();
+         } else {
+             showPrevImage();
+         }
+     } else {
+          // console.log('Swipe not detected (movement too small or vertical).');
+     }
+     // Les positions de toucher ne sont plus réinitialisées ici, mais dans touchcancel/touchend pour nettoyer à la fin de TOUTE séquence tactile
+     // touchstartX = 0;
+     // touchendX = 0;
+     // touchstartY = 0;
+     // touchendY = 0;
+ }
 
     // === ÉCOUTEURS DES BOUTONS ===
     nextBtn.addEventListener('click', showNextImage);
