@@ -162,7 +162,7 @@ h1 {
 /* --------------------------------------------- RESPONSIVE MODE --- */
 @media (max-width: 699px) {
     body {
-           max-height: calc(100vh - 120px);
+           max-height: calc(90vh - 120px);
     }
 
     h1 {
