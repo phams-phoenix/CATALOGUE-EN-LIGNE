@@ -5,7 +5,9 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: space-evenly;
-    min-height: 100vh;
+    min-height: 100dvh;
+
+   /* min-height: 100svh;  */
     margin: 0;
     background-color: #f0f0f0;
     background: linear-gradient(270deg, #5de0e6 0%, #004aad 100%);
@@ -18,24 +20,20 @@ h1 {
     font-size: 23px;
     color: #d6eaed;
     letter-spacing: 3px;
-    /* border-bottom: 1px solid #d6eaed; */
-    /* padding-top: 4px;
-    border-top: 1px solid #d6eaed; */
+ 
     animation: displayAnim 500ms ease 0s 1 normal forwards; 
 }
 .slider-container {
     max-width: 800px;
     width: 100%;
-    /* margin: 20px auto; */
-    /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
+
     overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
      padding: 5px; 
     box-sizing: border-box;
-    /*A voir==================================================================*/
-    /* margin-top: 5px; */    
+ 
 }
 .slider {
     width: 100%;
@@ -108,7 +106,7 @@ h1 {
     transition: opacity 0.3s ease, color 0.3s ease;
     display: block;
     -webkit-tap-highlight-color: transparent;
-    max-width: 100%; /* ← Ajout de sécu */
+    max-width: 100%; 
     animation: displayAnim 1s ease 0s 1 normal forwards;
 }
 
@@ -157,13 +155,11 @@ h1 {
 
 .hidden {
     display: none !important;
-}
+} 
 
 /* --------------------------------------------- RESPONSIVE MODE --- */
 @media (max-width: 699px) {
-    body {
-           max-height: calc(90vh - 120px);
-    }
+  
 
     h1 {
         font-size: 11px;
@@ -215,4 +211,4 @@ h1 {
     .slider-btn.is-visible-mobile {
         display: block !important;
     }
-}
+} 
