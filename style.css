@@ -153,13 +153,13 @@ h1 {
     display: none;
 }
 
+
 .hidden {
     display: none !important;
 } 
 
 /* --------------------------------------------- RESPONSIVE MODE --- */
-@media (max-width: 699px) {
-  
+@media (max-width: 899px) { 
 
     h1 {
         font-size: 11px;
@@ -211,4 +211,61 @@ h1 {
     .slider-btn.is-visible-mobile {
         display: block !important;
     }
+
 } 
+
+/* Styles du message de rotation (caché par défaut sur TOUS les appareils) */
+.rotate-message {
+    display: none; 
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9); 
+    color: white;
+    z-index: 1000; 
+    flex-direction: column;
+    /* justify-content: center; */
+    justify-content: space-evenly;
+    align-items: center;
+    text-align: center;
+   
+    font-size: 1.2em;
+}
+
+.rotate-message p {
+    margin: 10px 0;
+}
+.rotate-img {
+    width: 100px;
+     animation-name: rotatePhone; 
+    animation-duration: 2s;
+    animation-timing-function: ease-in-out; 
+    animation-iteration-count: infinite; 
+    animation-direction: alternate;
+}
+
+@keyframes rotatePhone {
+    from {
+       
+        transform: rotate(0deg);
+    }
+    to {
+        
+        transform: rotate(90deg); /* Pour une rotation dans le sens horaire */
+      
+    }
+}
+
+    @media (max-width: 1200px) and (orientation: landscape) {
+    /* Masquer le contenu principal */
+    .slider-container,
+    #mobileShowBtns  {
+        display: none !important;
+        
+    }
+    .rotate-message {
+        display: flex; 
+    }
+}
