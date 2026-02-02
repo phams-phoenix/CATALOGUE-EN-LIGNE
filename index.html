@@ -1,23 +1,15 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>CATALOGUE EN LIGNE | PHAM'S PHOENIX</title>
 
-    <meta name="description"
+     <meta name="description"
         content="Pots artisanaux zen ou modernes,couleurs personnalisables, disponibles aux formats : bonsaï jusqu’au XXL. Fabrication artisanale en Française." />
     <meta name="robots" content="index, follow" />
     <meta name="googlebot" content="index, follow" />
-  
 
-    <link rel="stylesheet" href="style.css">
-
-    <script src="https://kit.fontawesome.com/2b58de1911.js" crossorigin="anonymous"></script>
-
-  
     <link rel="icon" type="image/png" href="img_favicon/favicon-196x196.png" sizes="196x196" />
     <link rel="icon" type="image/png" href="img_favicon/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/png" href="img_favicon/favicon-32x32.png" sizes="32x32" />
@@ -53,29 +45,97 @@
     <meta name="twitter:description"
         content="Découvrez le catalogue complet des pots Pham's Phoenix la poterie de Hai.">
     <meta name="twitter:image" content="https://phams-phoenix.github.io/CATALOGUE-EN-LIGNE/images/catalogue-cover-sharing.png" />
+
+    <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.css">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000; /* Fond noir pour un look pro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* On cache la galerie initiale pour que l'utilisateur ne voit que le mode "App" */
+        #gallery-container {
+            display: none;
+        }
+
+        /* Petit message de chargement au cas où */
+        .loader {
+            color: white;
+            font-family: sans-serif;
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Catalogue des pots Pham's Phoenix</h1>
-    <div class="slider-container">
-        <div class="slider">
-            <img id="slider-img" src="images/catalogue_phams-phoenix_page-1.png" alt="Image du slider">
-            <button id="prevBtn" class="slider-btn prev">
-                <i class="fa-solid fa-circle-left"></i>
-            </button>
-            <button id="nextBtn" class="slider-btn next">
-                <i class="fa-solid fa-circle-right"></i>
-            </button>
-        </div>
-        <div class="swipe-hint">
-            <<< Glisser</div>
-        </div>
-         <div class="rotate-message">
-        <p>Veuillez tourner votre appareil en mode portrait pour une meilleure expérience.</p>
-        <img src="images/mobile-user-info.png" alt="Icône de rotation de l'appareil" class="rotate-img">
-        </div>
-        <button id="mobileShowBtns" class="mobile-only-btn"></button>
 
-        <script src="script.js"></script>
+    <div class="loader">Chargement du catalogue...</div>
+
+    <div id="gallery-container"></div>
+
+    <script type="module">
+        import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5.4.3/dist/photoswipe-lightbox.esm.js';
+        import PhotoSwipe from 'https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.esm.js';
+
+        // === CONFIGURATION ===
+        const totalImages = 32;
+        const imageBaseName = 'catalogue_phams-phoenix_page-';
+        const imageExtension = '.png';
+        const imageDirectory = './images/';
+
+        // IMPORTANT : Ajuste ces dimensions selon la taille réelle de tes images PNG
+        const imageWidth = 1240;  
+        const imageHeight = 1754; 
+
+        // === GÉNÉRATION DES DONNÉES ===
+        const galleryContainer = document.getElementById('gallery-container');
+        for (let i = 1; i <= totalImages; i++) {
+            const imagePath = `${imageDirectory}${imageBaseName}${i}${imageExtension}`;
+            const anchor = document.createElement('a');
+            anchor.href = imagePath;
+            anchor.dataset.pswpWidth = imageWidth;
+            anchor.dataset.pswpHeight = imageHeight;
+            anchor.classList.add('gallery-item');
+            galleryContainer.appendChild(anchor);
+        }
+
+        // === INITIALISATION ===
+        const lightbox = new PhotoSwipeLightbox({
+            gallery: '#gallery-container',
+            children: 'a',
+            pswpModule: PhotoSwipe,
+            
+            // Options pour le rendu mobile
+            initialZoomLevel: 'fit',
+            secondaryZoomLevel: 2,
+            maxZoomLevel: 4,
+            bgOpacity: 1, // Noir total derrière l'image
+        });
+
+        lightbox.init();
+
+        // === LE SECRET : OUVERTURE AUTOMATIQUE ===
+        // On attend un tout petit peu que le DOM soit prêt et on lance la page 1 (index 0)
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                lightbox.loadAndOpen(0); // 0 = première image
+                document.querySelector('.loader').style.display = 'none';
+            }, 100); 
+        });
+
+        // Si l'utilisateur ferme le catalogue, on le réouvre ou on affiche un bouton
+        lightbox.on('close', () => {
+            // Optionnel : rediriger ou afficher un bouton "Réouvrir le catalogue"
+            document.querySelector('.loader').innerHTML = '<button onclick="location.reload()" style="padding:15px; border-radius:10px; border:none; cursor:pointer;">Réouvrir le catalogue</button>';
+            document.querySelector('.loader').style.display = 'block';
+        });
+
+    </script>
 </body>
 </html>
