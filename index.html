@@ -49,34 +49,48 @@
     <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.3/dist/photoswipe.css">
 
     <style>
+        /* --- VERROUILLAGE DE LA PAGE --- */
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000; /* Fond noir pour un look pro */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
             overflow: hidden;
+            /* Empêche le navigateur de vouloir scroller la page entière */
+            overscroll-behavior: none; 
+            touch-action: none;
         }
 
-        /* On cache la galerie initiale pour que l'utilisateur ne voit que le mode "App" */
-        #gallery-container {
-            display: none;
+        #gallery-container { display: none; }
+
+        /* --- SUPPRESSION TOTALE DE L'INTERFACE DE FERMETURE --- */
+        .pswp__button--close, 
+        .pswp__button--zoom, 
+        .pswp__button--arrow--prev, 
+        .pswp__button--arrow--next {
+            display: none !important;
         }
 
-        /* Petit message de chargement au cas où */
+        /* Force le fond à rester noir opaque même si le script veut le changer */
+        .pswp__bg { 
+            opacity: 1 !important; 
+            background: #000 !important; 
+        }
+
+        /* Message de chargement */
         .loader {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
             color: white;
             font-family: sans-serif;
+            z-index: 9999;
         }
     </style>
 </head>
 <body>
 
     <div class="loader">Chargement du catalogue...</div>
-
+    
     <div id="gallery-container"></div>
 
     <script type="module">
@@ -88,54 +102,68 @@
         const imageBaseName = 'catalogue_phams-phoenix_page-';
         const imageExtension = '.png';
         const imageDirectory = './images/';
-
-        // IMPORTANT : Ajuste ces dimensions selon la taille réelle de tes images PNG
+        
+        // Ajuste ces dimensions selon tes fichiers PNG réels pour un zoom net
         const imageWidth = 1240;  
         const imageHeight = 1754; 
 
-        // === GÉNÉRATION DES DONNÉES ===
+        // === GÉNÉRATION DU CATALOGUE ===
         const galleryContainer = document.getElementById('gallery-container');
         for (let i = 1; i <= totalImages; i++) {
-            const imagePath = `${imageDirectory}${imageBaseName}${i}${imageExtension}`;
             const anchor = document.createElement('a');
-            anchor.href = imagePath;
+            anchor.href = `${imageDirectory}${imageBaseName}${i}${imageExtension}`;
             anchor.dataset.pswpWidth = imageWidth;
             anchor.dataset.pswpHeight = imageHeight;
-            anchor.classList.add('gallery-item');
             galleryContainer.appendChild(anchor);
         }
 
-        // === INITIALISATION ===
+        // === INITIALISATION PHOTOSWIPE ===
         const lightbox = new PhotoSwipeLightbox({
             gallery: '#gallery-container',
             children: 'a',
             pswpModule: PhotoSwipe,
             
-            // Options pour le rendu mobile
+            // On désactive tout ce qui est possible via les options officielles
+            escKey: false,
+            pinchToClose: false,
+            closeOnVerticalDrag: false,
+            clickToCloseNonZoomable: false,
+            
             initialZoomLevel: 'fit',
             secondaryZoomLevel: 2,
             maxZoomLevel: 4,
-            bgOpacity: 1, // Noir total derrière l'image
+            bgOpacity: 1,
         });
+
+        // --- LE VERROU DE SÉCURITÉ ABSOLU ---
+        // Cette fonction s'exécute dès que PhotoSwipe est prêt
+        lightbox.on('afterInit', () => {
+            console.log("Catalogue prêt et verrouillé.");
+            
+            // 1. On remplace la fonction close interne par une fonction vide
+            // C'est le "hack" qui empêche toute fermeture, même par geste
+            lightbox.pswp.close = function() { 
+                console.log("Tentative de fermeture bloquée.");
+                return; 
+            };
+
+            // 2. On masque le loader quand c'est ouvert
+            document.querySelector('.loader').style.display = 'none';
+        });
+
+        // Filtre supplémentaire pour bloquer les gestes de sortie au niveau du moteur
+        lightbox.addFilter('isCloseOnVerticalDrag', () => false);
+        lightbox.addFilter('isPinchToClose', () => false);
 
         lightbox.init();
 
-        // === LE SECRET : OUVERTURE AUTOMATIQUE ===
-        // On attend un tout petit peu que le DOM soit prêt et on lance la page 1 (index 0)
+        // --- OUVERTURE AUTOMATIQUE ---
         window.addEventListener('load', () => {
+            // Un petit délai de 100ms assure que tout est stable avant l'ouverture
             setTimeout(() => {
-                lightbox.loadAndOpen(0); // 0 = première image
-                document.querySelector('.loader').style.display = 'none';
-            }, 100); 
+                lightbox.loadAndOpen(0);
+            }, 100);
         });
-
-        // Si l'utilisateur ferme le catalogue, on le réouvre ou on affiche un bouton
-        lightbox.on('close', () => {
-            // Optionnel : rediriger ou afficher un bouton "Réouvrir le catalogue"
-            document.querySelector('.loader').innerHTML = '<button onclick="location.reload()" style="padding:15px; border-radius:10px; border:none; cursor:pointer;">Réouvrir le catalogue</button>';
-            document.querySelector('.loader').style.display = 'block';
-        });
-
     </script>
 </body>
 </html>
