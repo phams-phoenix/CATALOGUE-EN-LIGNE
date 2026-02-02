@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     // === CONFIGURATION ===
     const totalImages = 32;
@@ -19,6 +18,34 @@ document.addEventListener('DOMContentLoaded', () => {
     let touchstartY = 0;
     let touchendY = 0;
     const swipeThreshold = 50;
+    let isMultiTouch = false;
+
+    // === FONCTION DE VÉRIFICATION DU ZOOM ===
+    function isImageZoomed() {
+        // 1. Détection du zoom natif du téléphone (Pinch-to-zoom)
+        if (window.visualViewport && window.visualViewport.scale > 1.01) {
+            return true;
+        }
+
+        // 2. Détection du zoom CSS (si transform: scale est utilisé)
+        const style = window.getComputedStyle(sliderImg);
+        const transform = style.transform;
+        if (transform && transform !== 'none') {
+            const matrix = transform.match(/^matrix\((.+)\)$/);
+            if (matrix) {
+                const values = matrix[1].split(',');
+                const scaleX = parseFloat(values[0]);
+                if (scaleX > 1.05) return true;
+            }
+        }
+
+        // 3. Vérification si l'image est physiquement plus large que le conteneur
+        if (sliderImg.offsetWidth > document.querySelector('.slider').offsetWidth + 10) {
+            return true;
+        }
+
+        return false;
+    }
 
     // === FONCTION PRINCIPALE POUR CHANGER D’IMAGE ===
     function updateImage(newIndex) {
@@ -36,9 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
             sliderImg.src = newSrc;
             sliderImg.alt = `catalogue_des_pots_phams-phoenix_page-${newIndex + 1}`;
 
-            // Animation propre ici
+            // Animation
             sliderImg.classList.remove('animate-img');
-            void sliderImg.offsetWidth;
+            void sliderImg.offsetWidth; 
             sliderImg.classList.add('animate-img');
         };
 
@@ -60,80 +87,49 @@ document.addEventListener('DOMContentLoaded', () => {
         updateImage(currentIndex - 1);
     }
 
-    // Ajoutez cette variable booléenne au début de votre script, avec les autres variables d'état/swipe
-    let isMultiTouch = false;
-
-
     // === GESTION DES TOUCHES POUR SWIPE ===
-    document.querySelector('.slider').addEventListener('touchstart', (e) => {
-        // --- MODIFICATION ICI : Détecter si c'est un toucher multi-doigts ---
+    const sliderContainer = document.querySelector('.slider');
+    
+    sliderContainer.addEventListener('touchstart', (e) => {
         if (e.touches.length > 1) {
             isMultiTouch = true;
-            touchstartX = 0;
-            touchstartY = 0;
-            return;
         } else {
             isMultiTouch = false;
             touchstartX = e.touches[0].clientX;
             touchstartY = e.touches[0].clientY;
-
         }
-        // ---------------------------------------------------------------
-    });
+    }, { passive: true });
 
-    // --- AJOUT/MODIFICATION : Gérer l'événement touchcancel ---
-
-    document.querySelector('.slider').addEventListener('touchcancel', (e) => {
-        // --- MODIFICATION : Réinitialiser le drapeau multi-touch et les positions ---
+    sliderContainer.addEventListener('touchcancel', () => {
         isMultiTouch = false;
-        touchstartX = 0;
-        touchendX = 0;
-        touchstartY = 0;
-        touchendY = 0;
-        // console.log('Touch cancel');
     });
 
-
-    // --- MODIFICATION ICI : L'écouteur touchend ---
-    document.querySelector('.slider').addEventListener('touchend', (e) => {
-        // On enregistre toujours la position finale
-        touchendX = e.changedTouches[0].clientX;
-        touchendY = e.changedTouches[0].clientY;
-        // console.log('Touch end:', touchendX, touchendY);
-
-        // On appelle handleSwipe QUI va vérifier si c'était multi-touch
-        handleSwipe();
-
-
-        isMultiTouch = false; // Réinitialise le drapeau multi-touch
-
-    });
-
-
-    // --- MODIFICATION ICI : La fonction handleSwipe ---
-    function handleSwipe() {
-        // --- AJOUT IMPORTANT : Ignorer le swipe si le toucher initial était multi-doigts ---
-        if (isMultiTouch) {
-            // console.log('Ignoring swipe due to multi-touch flag.');
-            return;
+    sliderContainer.addEventListener('touchend', (e) => {
+        if (!isMultiTouch) {
+            touchendX = e.changedTouches[0].clientX;
+            touchendY = e.changedTouches[0].clientY;
+            handleSwipe();
         }
-        // -------------------------------------------------------------------
+        isMultiTouch = false; 
+    }, { passive: true });
+
+    // === LOGIQUE DE SWIPE AJUSTÉE ===
+    function handleSwipe() {
+        // Condition de blocage : si multi-doigts OU si zoomé
+        if (isMultiTouch || isImageZoomed()) {
+            return; 
+        }
 
         const diffX = touchendX - touchstartX;
         const diffY = touchendY - touchstartY;
 
-        // Le reste de la logique de détection de swipe ne change pas
         if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > swipeThreshold) {
-            // console.log('Swipe detected!');
             if (diffX < 0) {
                 showNextImage();
             } else {
                 showPrevImage();
             }
-        } else {
-            // console.log('Swipe not detected (movement too small or vertical).');
         }
-
     }
 
     // === ÉCOUTEURS DES BOUTONS ===
@@ -144,74 +140,51 @@ document.addEventListener('DOMContentLoaded', () => {
     updateImage(currentIndex);
 });
 
-
+// === GESTION DES BOUTONS MOBILES (IIFE) ===
 (function () {
-    // Retrouver les éléments nécessaires à l'intérieur de cette fonction
     const mobileShowBtns = document.getElementById('mobileShowBtns');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-
-    // Définir les textes pour les deux états
     const textShow = "Afficher les boutons de navigation";
     const textHide = "Ne pas afficher les boutons de navigation";
 
-    // Vérifier que tous les éléments nécessaires existent
     if (mobileShowBtns && prevBtn && nextBtn) {
-
-        // --- Fonction pour mettre à jour le texte du bouton en fonction de l'état des flèches ---
         function updateToggleButtonText() {
-            // Les flèches sont visibles si elles ont la classe 'is-visible-mobile'
-            if (prevBtn.classList.contains('is-visible-mobile')) {
-                // Si les flèches sont visibles, le texte du bouton doit proposer de les cacher
-                mobileShowBtns.textContent = textHide;
-
-            } else {
-                // Si les flèches sont cachées, le texte du bouton doit proposer de les afficher
-                mobileShowBtns.textContent = textShow;
-            }
+            mobileShowBtns.textContent = prevBtn.classList.contains('is-visible-mobile') ? textHide : textShow;
         }
 
-
-        // Ajouter l'écouteur de clic sur le bouton révélateur mobile
         mobileShowBtns.addEventListener('click', () => {
-            // 1. Basculer la classe 'is-visible-mobile' sur les flèches (ce qui change leur visibilité)
             prevBtn.classList.toggle('is-visible-mobile');
             nextBtn.classList.toggle('is-visible-mobile');
-
-            // 2. Mettre à jour le texte (ou l'icône) du bouton mobileShowBtns APRÈS que la visibilité a changé
             updateToggleButtonText();
         });
 
         updateToggleButtonText();
-
     }
 })();
 
+// === INDICE DE SWIPE (HINT) ===
+(function() {
+    const hint = document.querySelector('.swipe-hint');
+    const mobileBtn = document.getElementById('mobileShowBtns');
+    let hTouchStartX = 0;
 
-//// swipe
-const hint = document.querySelector('.swipe-hint');
-const mobileBtn = document.getElementById('mobileShowBtns');
+    if (hint) {
+        document.addEventListener('touchstart', e => {
+            hTouchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
 
-let touchStartX = 0;
-let touchEndX = 0;
+        document.addEventListener('touchend', e => {
+            const hTouchEndX = e.changedTouches[0].screenX;
+            if (Math.abs(hTouchEndX - hTouchStartX) > 50) {
+                hint.classList.add('hidden');
+            }
+        }, { passive: true });
 
-function handleGesture() {
-    if (Math.abs(touchEndX - touchStartX) > 50) {
-        hint.classList.add('hidden');
+        if (mobileBtn) {
+            mobileBtn.addEventListener('click', () => {
+                hint.classList.add('hidden');
+            });
+        }
     }
-}
-
-// Swipe sur tout le document 
-document.addEventListener('touchstart', e => {
-    touchStartX = e.changedTouches[0].screenX;
-});
-
-document.addEventListener('touchend', e => {
-    touchEndX = e.changedTouches[0].screenX;
-    handleGesture();
-});
-
-// Si le bouton est cliqué → on cache l’indice aussi
-mobileBtn.addEventListener('click', () => {
-    hint.classList.add('hidden');
-});
+})();
